@@ -1,0 +1,145 @@
+import random
+from random import gauss
+import pandas as pd                 #导入panads
+import pyperclip					#粘贴板用
+import numpy as np
+import warnings
+import os
+
+i=os.system('cls')
+# These are rare
+warnings.filterwarnings(
+    'ignore',
+    category=FutureWarning,
+    module='matplotlib')
+
+# These are rare
+warnings.filterwarnings(
+    'ignore',
+    category=DeprecationWarning,
+    module='matplotlib')
+
+while True:
+	i=os.system('cls')
+	number=int(input('个数 '))
+	num_mean=float(input('均值 '))
+	num_std=float(input('均方差 '))
+	num_min=float(input('最小值 '))
+	num_max=float(input('最大值 '))
+	# 
+	# number=5
+	# num_mean=5.2
+	# num_std=2.3
+	# num_min=2.1
+	# num_max=10.2
+	if num_mean>num_max or num_mean<num_min:
+		input('无法计算，退出')
+		exit(0)
+	# df = pandas.DataFrame(numpy.random.randint(0,100,size=(10, 4)), columns=list('ABCD')) # 0,100指定随机数为0到100之间（包括0，不包括100），size = (10,4)指定数据为10行4列，column指定列名
+	df = pd.DataFrame([num_min,num_max], columns=list('A'))
+	max_std=df['A'].std(ddof=1)
+	if num_std>=max_std:
+		input('标准差输入错误，无法计算，退出')
+		exit(0)
+	flag=True
+	count=1
+	num_step=0.1
+	num_dir=1
+	num_pre=0.000000001
+	while flag:
+		df = pd.DataFrame([gauss(num_mean, num_std) for _ in range(number*2)], columns=list('A'))
+		df.drop(df[(df['A']>num_max) | (df['A']<num_min)].index,inplace=True)
+		#print (df)
+		df=df[0:number]
+		#print('切片df',df)
+		dfmax,dfmin=df['A'].max(),df['A'].min()
+		if df['A'].mean()>num_mean:
+			df_place=dfmax-(df['A'].mean()-num_mean)*number
+			if df_place>num_min:
+				df.replace(dfmax,df_place,inplace=True)
+			else:
+				continue
+		else:
+			df_place=dfmin+(num_mean-df['A'].mean())*number
+			if df_place<num_max:
+				df.replace(dfmin,df_place,inplace=True)
+			else:
+				continue
+		if df['A'].std(ddof=1)>num_std:
+			num_dir=-1
+		else:
+			num_dir=1
+		#print('初始df',df,df.describe(),'\n方向',num_dir,flush=True)
+		while abs(df['A'].std(ddof=1)-num_std)>num_pre:
+			if df['A'].std(ddof=1)>num_std:
+				if num_dir==1:
+					num_dir=-1
+					num_step=num_step/10
+				else:
+					pass
+			else:
+				if num_dir==-1:
+					num_dir=1
+					num_step=num_step/10
+				else:
+					pass
+			dfmax,dfmin=df['A'].max(),df['A'].min()
+			dfplmax=dfmax+num_dir*num_step
+			dfplmin=dfmin-num_dir*num_step
+			df.replace(dfmax,dfplmax,inplace=True)
+			df.replace(dfmin,dfplmin,inplace=True)
+			count+=1
+			if count%100==0:
+				#print('dir %d step %.3f'%(num_dir,num_step),flush=True)
+				#print(df,df.describe(),flush=True)
+				print('已经尝试 %s 次'%count,flush=True)
+				#exit()
+			if dfplmax>num_max or dfplmin <num_min:
+				break
+			df.reindex()
+		# print('处理前',df)
+		# print('处理前指标',df.describe())
+		# print(df['A'].std(ddof=1),type(df['A'].std(ddof=1)))  #默认是除以n-1 的，即是无偏的，有偏，需要加上参数ddof=0
+		if abs(df['A'].std(ddof=1)-num_std)<num_pre:  #or count>20000:
+			flag=False
+	print('要求输出：%d 个   最小值： %.4f    最大值： %.4f   均值： %.4f    均方差： %.4f'%(number,num_min,num_max,num_mean,num_std))
+	print('处理后',df)								#exclude='O'则表示不输出离散型  1.unique: 唯一值数 2.top: 频数最高者 3.freq: 最高频数
+	print('处理后指标',df.describe(include='all'))	#df.describe(include='all') df.describe(percentiles=[.8,.9])设置参数为'all'则输入的所有列都在输出中,设置为O则只输出离散型变量的统计信息
+	print('标准差有偏N',df['A'].std(ddof=0))	#pd算法默认是除以n-1 的，即是无偏的，有偏，需要加上参数ddof=0
+	print('中位数',df['A'].median()) 		# 中数；
+	print('方差',np.var(df['A']))
+	print('总和',np.sum(df['A'])) 		# 求和
+	print('求积',np.prod(df['A'])) 		# 所有元素相乘
+	print('平均',np.mean(df['A'])) 		# 平均值；
+	print('标准差有偏N',np.std(df['A'])) 		# 标准差；
+	print('方差',np.var(df['A'])) 		# 方差；
+	#print('极差',df['A'].numpy.ptp(axis=0)) 			# 极差；a.ptp(axis=0)
+	print('协方差',np.cov(df['A'])) 		# 协方差；
+	print('相关系数',np.corrcoef(df['A'])) 		# 相关系数；
+	print('中位数',np.median(df['A'])) 	# 中数；
+	print('平方',np.power(df['A'],2)) 	# 幂运算；
+	print('开方',np.sqrt(df['A'])) 		# 开方；
+	print('最小值',np.min(df['A'])) 		# 最小值；
+	print('最大值',np.max(df['A'])) 		# 最大值；
+	print('最小值的下标',df['A'].idxmin()) 			# 最小值的下标；
+	print('最大值的下标',df['A'].idxmax()) 		# 最大值的下标
+	alists=df['A'].tolist()
+	print(alists)
+	pyperclip.copy(",".join(str(i) for i in alists))
+	con=input('运行结束，已将数据复制至粘贴板，按q退出，直接回车后重新开始......')
+	if con.lower()=="q":
+		exit()
+	'''
+	包		方法		说明
+	numpy	array	创造一组数
+	numpy.random	normal	创造一组服从正态分布的定量数
+	numpy.random	randint	创造一组服从均匀分布的定性数
+	numpy	mean	计算均值
+	numpy	median	计算中位数
+	scipy.stats	mode	计算众数
+	numpy	ptp	计算极差
+	numpy	var	计算方差
+	numpy	std	计算标准差
+	numpy	cov	计算协方差
+	numpy	corrcoef	计算相关系数
+	'''
